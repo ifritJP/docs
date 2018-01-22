@@ -1,0 +1,97 @@
+#+TITLE: emacs で hipchat 
+#+AUTHOR: ifritJP
+#+LANGUAGE: ja
+#+EMAIL: 
+#+OPTIONS: ^:{}
+
+* hipchat
+
+hipchat は XMPP をベースとしたチャットサービスである。
+
+* XMPP
+
+emacs には XMPP を扱うためのライブラリ emacs-jabber (jabber.el) が開発されている。
+
+http://emacs-jabber.sourceforge.net/
+
+最新は github で開発されているが、
+github のものは一部の起動が動作しなかったため、
+sourceforge 上の 0.8.92 の利用をオススメする。
+
+* 設定
+
+emacs-jabber で hipchat に接続する最低限の設定は次の通りである。
+
+#+BEGIN_SRC txt
+(setq jabber-account-list
+      '(("1_1@hipchat.com" ;; <-- hipchat の JID
+	 (:network-server . "hipchat.com")  ;; <-- hipchat のサーバ
+	 (:connection-type . ssl))))
+#+END_SRC
+
+あとは M-x jabber-connect-all で OK。
+
+
+ただ、これだけだと次の問題がある。
+
+- チャットが折り返されて読み難い。
+- presence (away, online 等) のメッセージが mini-buffer に出て邪魔。
+- hipchat 接続時に、room チャットが常に「新規メッセージあり」状態になる。
+- offline 時の private チャットのログが残らない。
+
+以降は、これらの問題に対応する設定方法について説明する。
+
+** チャットの折り返しを抑制
+
+次の設定で折り返しを抑制できる。
+   
+#+BEGIN_SRC txt
+(setq jabber-chat-fill-long-lines nil)   
+#+END_SRC
+   
+** presence (away, online 等) のメッセージ抑制
+
+次の設定でメッセージを抑制できる。
+   
+#+BEGIN_SRC txt
+(remove-hook 'jabber-alert-presence-hooks 'jabber-presence-echo)
+#+END_SRC
+   
+** room チャットが常に「新規メッセージあり」状態になる。
+
+hipchat は、サーバ接続時に room チャットの履歴を新規メッセージとして送ってきます。
+
+これにより、 emacs-jabber は room チャットの履歴を新規メッセージとして判断してしまいます。
+
+これを抑制するため、次の関数を作成します。
+
+#+BEGIN_SRC lisp
+(defun my-hipchat-jabber-activity-show-p (JID)
+  nil)
+
+(defun my-hipchat-start ()
+  (interactive)
+  ;; hipchat は、 connect 時に ROOM のメッセージ履歴が送られてくる。
+  ;; メッセージ履歴は activity として表示しないように jabber-activity-show-p をセットする
+  (setq jabber-activity-show-p 'my-hipchat-jabber-activity-show-p)
+  (jabber-connect-all)
+  (run-at-time 60 nil
+	       (lambda ()
+		 (setq jabber-activity-show-p 'jabber-activity-show-p-default)
+		 )))
+#+END_SRC
+
+jabber-emasc ではメッセージを受信した時に 
+jabber-activity-show-p に登録されている関数を実行し、
+そのメッセージを新規メッセージとして通知するかどうかを判断します。
+
+上記処理は、jabber-activity-show-p をダミー関数で上書きし、
+新規メッセージとしての通知を抑制するものです。
+一定時間 (60秒) 経過後に jabber-activity-show-p をデフォルトの関数に戻しています。
+
+この処理はイマイチですが、とりあえず目的の動作をしてくれます。
+
+** offline 時の private チャットのログ取得
+
+emacs-jabber は private チャットのログをファイルに記録する機能があります。
+しかし、
