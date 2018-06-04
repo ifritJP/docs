@@ -1404,6 +1404,7 @@ int sampleCompare(const void * val1, const void * val2, const int param );
 #+END_SRC
 
 方法としては、次の 2 つが考えられます。
+
 - param をグローバル変数 ~g_param~ に設定する
   - sampleCompareWrap( const void * val1, const void * val2 ) を作成。
     - この sampleCompareWrap() から sampleCompare( val1, val2, ~g_param~ ) を実行する。
