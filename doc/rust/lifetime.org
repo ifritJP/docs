@@ -1,9 +1,12 @@
-#+TITLE: Rust の所有権とライフタイム
+# -*- coding:utf-8 -*-
 #+AUTHOR: ifritJP
-#+LANGUAGE: ja
-#+EMAIL: 
+#+STARTUP: nofold
 #+OPTIONS: ^:{}
 #+HTML_HEAD: <link rel="stylesheet" type="text/css" href="org-mode-document.css" />
+#+HTML_HEAD: <meta http-equiv="Pragma" content="no-cache">
+#+HTML_HEAD: <meta http-equiv="Cache-Control" content="no-cache"> 
+
+#+TITLE: C/C++エンジニアのための Rust のデータ所有権とライフタイム入門
 
 # org-mode 簡易リファレンス
 # ○ 展開
@@ -37,7 +40,7 @@
 
 Rust のキモであるライフタイムの概念において、
 ネットの解説ドキュメントでは自分には理解が困難だったため、
-自分なりに Rust を動かして確認した結果をまとめる。
+Rust を動かして自分なりに確認した結果をまとめる。
 
 使用した Rust は 1.17.0 である。
 
@@ -594,10 +597,10 @@ fn main() {
         let mut f = Foo { xx: &x, yy: &y };
         z = f.x();
         q = f.y();
-        println!("{} {} {}", z[0], q[0], f.y()[0] ); // 1 2
+        println!("{} {} {}", z[0], q[0], f.y()[0] ); // 1 2 2
         //z = f.y(); // error
         f.yy = &x;
-        println!("{} {} {}", z[0], q[0], f.y()[0] ); // 1 1
+        println!("{} {} {}", z[0], q[0], f.y()[0] ); // 1 2 1
         //z = f.y(); // error
     }
 }
